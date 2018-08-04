@@ -7,19 +7,14 @@ from pycocotools import mask as maskUtils
 
 import os
 
-class MappingChallengeDataset(utils.Dataset):
-    def load_dataset(self, dataset_dir, load_small=False, return_coco=True):
-        """ Loads dataset released for the crowdAI Mapping Challenge(https://www.crowdai.org/challenges/mapping-challenge)
+class MyFoodRepoDataset(utils.Dataset):
+    def load_dataset(self, dataset_dir, return_coco=True):
+        """
+            Loads dataset from MyFoodRepo MTurk Segmentations
             Params:
                 - dataset_dir : root directory of the dataset (can point to the train/val folder)
-                - load_small : Boolean value which signals if the annotations for all the images need to be loaded into the memory,
-                               or if only a small subset of the same should be loaded into memory
         """
-        self.load_small = load_small
-        if self.load_small:
-            annotation_path = os.path.join(dataset_dir, "annotation-small.json")
-        else:
-            annotation_path = os.path.join(dataset_dir, "annotation.json")
+        annotation_path = os.path.join(dataset_dir, "annotations.json")
 
         image_dir = os.path.join(dataset_dir, "images")
         print("Annotation Path ", annotation_path)
@@ -37,13 +32,13 @@ class MappingChallengeDataset(utils.Dataset):
 
         # register classes
         for _class_id in classIds:
-            self.add_class("crowdai-mapping-challenge", _class_id, self.coco.loadCats(_class_id)[0]["name"])
+            self.add_class("MyFoodRepo", _class_id, self.coco.loadCats(_class_id)[0]["name"])
 
         # Register Images
         for _img_id in image_ids:
             assert(os.path.exists(os.path.join(image_dir, self.coco.imgs[_img_id]['file_name'])))
             self.add_image(
-                "crowdai-mapping-challenge", image_id=_img_id,
+                "MyFoodRepo", image_id=_img_id,
                 path=os.path.join(image_dir, self.coco.imgs[_img_id]['file_name']),
                 width=self.coco.imgs[_img_id]["width"],
                 height=self.coco.imgs[_img_id]["height"],
@@ -70,7 +65,7 @@ class MappingChallengeDataset(utils.Dataset):
         """
 
         image_info = self.image_info[image_id]
-        assert image_info["source"] == "crowdai-mapping-challenge"
+        assert image_info["source"] == "MyFoodRepo"
 
         instance_masks = []
         class_ids = []
@@ -79,7 +74,7 @@ class MappingChallengeDataset(utils.Dataset):
         # of class IDs that correspond to each channel of the mask.
         for annotation in annotations:
             class_id = self.map_source_class_id(
-                "crowdai-mapping-challenge.{}".format(annotation['category_id']))
+                "MyFoodRepo.{}".format(annotation['category_id']))
             if class_id:
                 m = self.annToMask(annotation,  image_info["height"],
                                                 image_info["width"])
@@ -100,7 +95,7 @@ class MappingChallengeDataset(utils.Dataset):
             return mask, class_ids
         else:
             # Call super class to return an empty mask
-            return super(MappingChallengeDataset, self).load_mask(image_id)
+            return super(MyFoodRepoDataset, self).load_mask(image_id)
 
 
     def image_reference(self, image_id):
@@ -109,7 +104,7 @@ class MappingChallengeDataset(utils.Dataset):
             Ideally you this function is supposed to return a URL
             but in this case, we will simply return the image_id
         """
-        return "crowdai-mapping-challenge::{}".format(image_id)
+        return "MyFoodRepo::{}".format(image_id)
     # The following two functions are from pycocotools with a few changes.
 
     def annToRLE(self, ann, height, width):
